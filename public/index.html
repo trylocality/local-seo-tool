@@ -739,9 +739,12 @@
         window.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Locality App starting...');
             
-            // For preview purposes, show the report directly with sample data
-            showReportWithSampleData();
-        });
+            /// Check if user is already logged in
+if (authToken) {
+    checkAuth();
+} else {
+    showLogin();
+}
 
         // Get dynamic summary based on status
         function getDynamicSummary(factorId, status) {
@@ -1519,9 +1522,14 @@
                 return null; // This will hide the suggestion section
             }
             
-            if (factorId === 'description') {
-                return 'Maintenance One Office Cleaning & Janitorial Services is the Best Commercial Cleaning Service in Stamford. With multiple locations and countless satisfied clients we are ready to help keep your business sanitary so you can keep your business growing! Providing services such as Office cleaning, Janitorial Services, Commercial Office Cleaning, Carpet Cleaning, Window Cleaning, and so much more. Maintenance One of Stamford has you covered. Give us a call and lets talk about your office cleaning needs today!';
-            }
+           if (factorId === 'description') {
+    // Try to get from AI suggestions first
+    const suggestionKey = getSuggestionKey(factorId);
+    if (smartSuggestions.suggestions && smartSuggestions.suggestions[suggestionKey]) {
+        return smartSuggestions.suggestions[suggestionKey].content;
+    }
+    return 'AI suggestion will be generated based on your specific business information.';
+}
             
             // Try to get from AI suggestions
             const suggestionKey = getSuggestionKey(factorId);
