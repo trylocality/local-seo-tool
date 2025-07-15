@@ -1522,14 +1522,14 @@ if (authToken) {
                 return null; // This will hide the suggestion section
             }
             
-           if (factorId === 'description') {
-    // Try to get from AI suggestions first
-    const suggestionKey = getSuggestionKey(factorId);
-    if (smartSuggestions.suggestions && smartSuggestions.suggestions[suggestionKey]) {
-        return smartSuggestions.suggestions[suggestionKey].content;
-    }
-    return 'AI suggestion will be generated based on your specific business information.';
-}
+            if (factorId === 'description') {
+                // Try to get from AI suggestions first
+                const suggestionKey = getSuggestionKey(factorId);
+                if (smartSuggestions.suggestions && smartSuggestions.suggestions[suggestionKey]) {
+                    return smartSuggestions.suggestions[suggestionKey].content;
+                }
+                return 'AI suggestion will be generated based on your specific business information.';
+            }
             
             // Try to get from AI suggestions
             const suggestionKey = getSuggestionKey(factorId);
