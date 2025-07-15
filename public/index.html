@@ -735,16 +735,19 @@
             { percent: 100, text: 'Finalizing report...' }
         ];
 
-        // Check if user is already logged in when page loads
+        });
+
+        // Check if user is already logged in
         window.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Locality App starting...');
             
-            /// Check if user is already logged in
-if (authToken) {
-    checkAuth();
-} else {
-    showLogin();
-}
+            // Check if user is already logged in
+            if (authToken) {
+                checkAuth();
+            } else {
+                showLogin();
+            }
+        });
 
         // Get dynamic summary based on status
         function getDynamicSummary(factorId, status) {
@@ -1665,6 +1668,7 @@ if (authToken) {
             showToast('Logged out successfully', 'success');
             console.log('👋 User logged out');
         }
+    }
     </script>
 </body>
 </html>
