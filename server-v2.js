@@ -573,8 +573,9 @@ async function analyzeWebsite(websiteUrl, location) {
     const hasGBPEmbed = gbpIndicators.some(indicator => htmlLower.includes(indicator));
     
     // Check for localized landing page - search for both city AND state
-    const cityLower = location.split(',')[0].toLowerCase().trim(); // Extract city from "City, ST"
-    const stateLower = location.split(',')[1].toLowerCase().trim(); // Extract state from "City, ST"
+    const { city, state } = extractCityState(location);
+    const cityLower = city.toLowerCase();
+    const stateLower = state.toLowerCase();
     const localizedIndicators = [
       // City-specific patterns
       `/${cityLower}`,
@@ -620,6 +621,48 @@ async function analyzeWebsite(websiteUrl, location) {
       note: `Website analysis failed: ${error.message}`
     };
   }
+}
+
+// Helper function to extract city and state from location string
+function extractCityState(location) {
+  // Handle full address format (e.g., "123 Main St, Miami, FL 33101")
+  const parts = location.split(',').map(p => p.trim());
+  
+  if (parts.length === 2) {
+    // Simple "City, ST" format
+    return {
+      city: parts[0],
+      state: parts[1]
+    };
+  } else if (parts.length >= 3) {
+    // Full address format - extract city and state from the last parts
+    const lastPart = parts[parts.length - 1].trim();
+    const secondLastPart = parts[parts.length - 2].trim();
+    
+    // Check if last part is a zip code
+    if (/^\d{5}(-\d{4})?$/.test(lastPart)) {
+      // Extract state from second last part (e.g., "FL 33101" -> "FL")
+      const stateMatch = secondLastPart.match(/^([A-Z]{2})\s+\d{5}/i) || secondLastPart.match(/^([A-Z]{2})$/i);
+      if (stateMatch) {
+        return {
+          city: parts[parts.length - 3] || secondLastPart.replace(/\s*[A-Z]{2}\s*\d{5}.*$/i, '').trim(),
+          state: stateMatch[1].toUpperCase()
+        };
+      }
+    } else if (/^[A-Z]{2}$/i.test(lastPart)) {
+      // Last part is state abbreviation
+      return {
+        city: secondLastPart,
+        state: lastPart.toUpperCase()
+      };
+    }
+  }
+  
+  // Fallback - try to split by comma and use first two parts
+  return {
+    city: parts[0] || location,
+    state: parts[1] || ''
+  };
 }
 
 // Helper function to extract services from HTML
@@ -950,16 +993,17 @@ function analyzeDescriptionCriteria(description, businessName, location, industr
   }
   
   const descLower = description.toLowerCase();
-  const city = location.split(',')[0].toLowerCase().trim();
+  const { city } = extractCityState(location);
+  const cityLowerCase = city.toLowerCase();
   
   // Check for localized keywords
   const localPatterns = [
-    `${city}`,
+    `${cityLowerCase}`,
     `local`,
-    `serving ${city}`,
-    `${city} area`,
-    `${city} ${industry.toLowerCase()}`,
-    `${industry.toLowerCase()} in ${city}`
+    `serving ${cityLowerCase}`,
+    `${cityLowerCase} area`,
+    `${cityLowerCase} ${industry.toLowerCase()}`,
+    `${industry.toLowerCase()} in ${cityLowerCase}`
   ];
   const hasLocalKeywords = localPatterns.some(pattern => descLower.includes(pattern));
   
@@ -993,8 +1037,7 @@ async function generateSmartSuggestions(businessInfo, scoreData, websiteServices
     
     const suggestions = {};
     const { businessName, location, industry, website } = businessInfo;
-    const city = location.split(',')[0].trim();
-    const state = location.split(',')[1].trim();
+    const { city, state } = extractCityState(location);
     
     // 1. Business Description (if needed)
     if (scoreData.scores.description < 10) {
@@ -1096,6 +1139,65 @@ async function generateSmartSuggestions(businessInfo, scoreData, websiteServices
       `;
       
       suggestions.qa = await callOpenAI(qaPrompt, 'Q&A');
+    }
+    
+    // 6. Review Management (if needed)
+    if (scoreData.scores.reviews < 8) {
+      const reviewsPrompt = `
+      Create a review management strategy for:
+      Business: ${businessName}
+      Industry: ${industry}
+      Location: ${city}, ${state}
+      
+      Provide:
+      - 3 ways to encourage more reviews
+      - 2 review request templates (1 follow-up email, 1 text message)
+      - Best practices for responding to reviews
+      
+      Keep it practical and actionable.
+      `;
+      
+      suggestions.reviews = await callOpenAI(reviewsPrompt, 'reviews');
+    }
+    
+    // 7. Citation Building (if needed)
+    if (scoreData.scores.citations < 8) {
+      const citationsPrompt = `
+      Create a citation building strategy for:
+      Business: ${businessName}
+      Industry: ${industry}
+      Location: ${city}, ${state}
+      
+      Provide:
+      - Top 10 citation sources for ${industry} businesses
+      - NAP (Name, Address, Phone) consistency checklist
+      - Monthly citation building action plan
+      
+      Focus on industry-specific and local directories.
+      `;
+      
+      suggestions.citations = await callOpenAI(citationsPrompt, 'citations');
+    }
+    
+    // 8. Landing Page Optimization (if needed)
+    if (scoreData.scores.landingPage < 8) {
+      const landingPagePrompt = `
+      Create a local landing page optimization strategy for:
+      Business: ${businessName}
+      Industry: ${industry}
+      Location: ${city}, ${state}
+      Website: ${website}
+      
+      Provide:
+      - 5 key elements for the local landing page
+      - Local SEO keywords to include
+      - Content structure recommendations
+      - Local trust signals to add
+      
+      Focus on converting local visitors.
+      `;
+      
+      suggestions.landingPage = await callOpenAI(landingPagePrompt, 'landingPage');
     }
     
     console.log(`✅ Smart suggestions generated for ${Object.keys(suggestions).length} areas`);
@@ -1723,6 +1825,78 @@ app.get('/api/status', (req, res) => {
     database: 'connected',
     version: '3.0.0'
   });
+});
+
+// ==========================================
+// FEEDBACK API ENDPOINT
+// ==========================================
+
+app.post('/api/feedback', authenticateToken, async (req, res) => {
+  try {
+    const { rating, type, message, email, reportData } = req.body;
+    const userId = req.user.id;
+    
+    // Validate required fields
+    if (!rating || !type || !message) {
+      return res.status(400).json({ error: 'Rating, type, and message are required' });
+    }
+    
+    // Validate rating range
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+    
+    // Validate feedback type
+    const validTypes = ['general', 'bug', 'feature', 'performance'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid feedback type' });
+    }
+    
+    console.log(`💬 Feedback received: ${rating} stars, Type: ${type}, User: ${userId}`);
+    
+    // Create feedback table if it doesn't exist
+    db.run(`CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      rating INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      email TEXT,
+      report_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )`);
+    
+    // Insert feedback into database
+    const stmt = db.prepare(`
+      INSERT INTO feedback (user_id, rating, type, message, email, report_data)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      userId,
+      rating,
+      type,
+      message,
+      email || null,
+      reportData ? JSON.stringify(reportData) : null
+    );
+    
+    stmt.finalize();
+    
+    console.log(`✅ Feedback saved successfully for user ${userId}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Feedback submitted successfully. Thank you for your input!' 
+    });
+    
+  } catch (error) {
+    console.error('❌ Feedback submission error:', error);
+    res.status(500).json({ 
+      error: 'Failed to submit feedback. Please try again.' 
+    });
+  }
 });
 
 // ==========================================
