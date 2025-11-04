@@ -1948,21 +1948,22 @@
             const opportunities = bulkData.opportunityMatrix;
             
             reportSection.innerHTML = `
-                <!-- Bulk Report Header -->
-                <div class="business-info-header">
-                    <div class="business-details">
-                        <div><strong>Analysis:</strong> ${summary.title}</div>
-                        <div><strong>Generated:</strong> ${bulkData.generatedDate}</div>
-                        <div><strong>Businesses Analyzed:</strong> ${summary.totalAnalyzed}</div>
-                        <div><strong>Average Score:</strong> ${summary.averageScore}/100</div>
-                    </div>
-                    <div class="logo-container">
-                        <img src="/assets/logo.png" alt="Logo" class="logo">
-                    </div>
-                </div>
-                
                 <!-- Executive Summary -->
-                <div style="padding: 30px; background: white;">
+                <div style="padding: 30px; background: white; position: relative;">
+                    <!-- Logo in Top Right -->
+                    <div style="position: absolute; top: 20px; right: 30px;">
+                        <img src="Locality Logo (1).png" alt="Locality" style="height: 40px; width: auto;">
+                    </div>
+
+                    <!-- Bulk Report Header Info -->
+                    <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e9ecef;">
+                        <div style="font-size: 0.9rem; color: #495057; line-height: 1.8;">
+                            <div><strong style="color: #2c5282;">Analysis:</strong> ${summary.title}</div>
+                            <div><strong style="color: #2c5282;">Generated:</strong> ${bulkData.generatedDate}</div>
+                            <div><strong style="color: #2c5282;">Businesses Analyzed:</strong> ${summary.totalAnalyzed}</div>
+                            <div><strong style="color: #2c5282;">Average Score:</strong> ${summary.averageScore}/100</div>
+                        </div>
+                    </div>
                     <h2 style="color: #2c5282; margin-bottom: 20px;">📊 Executive Summary</h2>
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
