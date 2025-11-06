@@ -357,7 +357,7 @@ async function takeBusinessProfileScreenshot(businessName, location) {
   }
 }
 
-// 3. AI ANALYSIS - Extract posts, services, Q&As from screenshot
+// 3. AI ANALYSIS - Extract posts, product tiles, services, social links from screenshot
 async function analyzeScreenshotWithAI(screenshotPath, businessName) {
   try {
     console.log(`🤖 AI analyzing screenshot: ${businessName}`);
@@ -371,13 +371,13 @@ async function analyzeScreenshotWithAI(screenshotPath, businessName) {
     
     const analysisPrompt = `
     Analyze this Google Business Profile screenshot for "${businessName}".
-    
+
     Look for these specific elements:
     1. POSTS/UPDATES: Recent posts, updates, or announcements in the "Posts" or "Updates" section
     2. PRODUCT TILES: Product/service tiles or listings in a dedicated products section
-    3. Q&A SECTION: Questions and answers from customers
+    3. SERVICES: Services listed in the "Services" section (look for a dedicated services area with service names, descriptions, or prices)
     4. SOCIAL MEDIA: Social media profile links or icons
-    
+
     Respond ONLY with valid JSON:
     {
       "posts": {
@@ -388,7 +388,7 @@ async function analyzeScreenshotWithAI(screenshotPath, businessName) {
         "hasAny": false,
         "count": 0
       },
-      "qa": {
+      "services": {
         "hasAny": false,
         "count": 0
       },
@@ -435,7 +435,7 @@ async function analyzeScreenshotWithAI(screenshotPath, businessName) {
     
     const analysis = JSON.parse(cleanedResponse);
     
-    console.log(`✅ AI Analysis: Posts: ${analysis.posts.hasRecent}, Product Tiles: ${analysis.productTiles.hasAny}, Q&A: ${analysis.qa.hasAny}, Social: ${analysis.social.hasAny}`);
+    console.log(`✅ AI Analysis: Posts: ${analysis.posts.hasRecent}, Product Tiles: ${analysis.productTiles.hasAny}, Services: ${analysis.services.hasAny}, Social: ${analysis.social.hasAny}`);
     
     return analysis;
     
@@ -818,7 +818,7 @@ function calculateScore(data) {
     productTiles: 0,      // 10 pts
     photos: 0,            // 8 pts
     posts: 0,             // 8 pts
-    qa: 0,                // 4 pts
+    services: 0,          // 4 pts
     social: 0,            // 2 pts
     reviews: 0,           // 12 pts (3 each for 4 criteria)
     citations: 0,         // 14 pts
@@ -896,14 +896,19 @@ function calculateScore(data) {
     details.posts = { status: 'MISSING', message: 'Start posting regular updates' };
   }
   
-  // 7. Q&A (4 pts) - Give half credit if we can't detect properly
-  if (data.aiAnalysis.qa && data.aiAnalysis.qa.hasAny) {
-    scores.qa = 4;
-    details.qa = { status: 'GOOD', message: `${data.aiAnalysis.qa.count} Q&As found` };
+  // 7. SERVICES (4 pts) - 0/2/4 based on detection
+  if (data.aiAnalysis.services && data.aiAnalysis.services.hasAny) {
+    const serviceCount = data.aiAnalysis.services.count;
+    if (serviceCount >= 3) {
+      scores.services = 4;
+      details.services = { status: 'GOOD', message: `${serviceCount} services found` };
+    } else if (serviceCount > 0) {
+      scores.services = 2;
+      details.services = { status: 'NEEDS IMPROVEMENT', message: `${serviceCount} services found, add more` };
+    }
   } else {
-    // Give half credit since detection isn't always reliable
-    scores.qa = 2;
-    details.qa = { status: 'UNCERTAIN', message: 'Q&A section not clearly detected - may exist but not visible in screenshot' };
+    scores.services = 0;
+    details.services = { status: 'MISSING', message: 'Add services to your profile' };
   }
   
   // 8. SOCIAL PROFILES (2 pts) - Binary
@@ -1120,25 +1125,31 @@ async function generateSmartSuggestions(businessInfo, scoreData, websiteServices
       suggestions.posts = await callOpenAI(postsPrompt, 'posts');
     }
     
-    // 5. Q&A Content (if needed)
-    if (scoreData.scores.qa < 4) {
-      const qaPrompt = `
-      Create 5 Q&A pairs for Google Business Profile:
+    // 5. Services Content (if needed)
+    if (scoreData.scores.services < 4) {
+      const servicesPrompt = `
+      Create a list of 6-8 services for this Google Business Profile:
       Business: ${businessName}
       Industry: ${industry}
       Location: ${city}, ${state}
-      
-      Questions should be common customer inquiries.
-      Answers should be helpful and include local keywords.
-      
+      Website Services Found: ${websiteServices.join(', ') || 'None detected'}
+
+      For each service provide:
+      - Service name (clear and specific)
+      - Brief description (1-2 sentences)
+      - Suggested price range (if applicable for ${industry})
+
       Format as:
-      Q: Question here?
-      A: Answer here.
-      
-      (blank line between pairs)
+      Service Name
+      Description here.
+      Price: $XX-$XX (or "Contact for pricing")
+
+      (blank line between services)
+
+      Make services specific to ${industry} in ${city}, ${state}.
       `;
-      
-      suggestions.qa = await callOpenAI(qaPrompt, 'Q&A');
+
+      suggestions.services = await callOpenAI(servicesPrompt, 'services');
     }
     
     // 6. Review Management (if needed)
@@ -1257,7 +1268,7 @@ function getInstructionsFor(type) {
     'categories': 'Add these categories in your Google Business Profile > Info > Category section.',
     'product tiles': 'Add these as Products/Services in your Google Business Profile > Products section.',
     'posts': 'Use these as Google Posts - post 1-2 per week for better engagement.',
-    'Q&A': 'Add these questions and answers to your Google Business Profile Q&A section.'
+    'services': 'Add these services in your Google Business Profile > Services section with descriptions and pricing.'
   };
   
   return instructions[type] || 'Follow Google Business Profile guidelines for implementation.';
@@ -1296,7 +1307,7 @@ async function generateCompleteReport(businessName, location, industry, website)
       partialData.aiAnalysis = {
         posts: { hasRecent: false, count: 0 },
         productTiles: { hasAny: false, count: 0 },
-        qa: { hasAny: false, count: 0 },
+        services: { hasAny: false, count: 0 },
         social: { hasAny: false, count: 0 }
       };
     }
@@ -1489,7 +1500,7 @@ function formatFactorName(key) {
     productTiles: 'Product/Service Tiles',
     photos: 'Photos',
     posts: 'Post Activity',
-    qa: 'Q&A Section',
+    services: 'Services',
     social: 'Social Media Links',
     reviews: 'Customer Reviews',
     citations: 'Local Citations',
@@ -1502,7 +1513,7 @@ function formatFactorName(key) {
 function getMaxScore(key) {
   const maxScores = {
     claimed: 8, description: 10, categories: 8, productTiles: 10,
-    photos: 8, posts: 8, qa: 4, social: 2,
+    photos: 8, posts: 8, services: 4, social: 2,
     reviews: 12, citations: 14, gbpEmbed: 8, landingPage: 8
   };
   return maxScores[key] || 0;
@@ -1518,7 +1529,7 @@ function generateActionPlan(scoreData) {
     productTiles: { task: 'Add Product/Service Tiles', time: '30 minutes', priority: 'HIGH' },
     photos: { task: 'Upload High-Quality Photos', time: '1 hour', priority: 'MEDIUM' },
     posts: { task: 'Start Weekly Google Posts', time: '15 min/week', priority: 'MEDIUM' },
-    qa: { task: 'Populate Q&A Section', time: '30 minutes', priority: 'LOW' },
+    services: { task: 'Add Services to Profile', time: '30 minutes', priority: 'MEDIUM' },
     social: { task: 'Add Social Media Links', time: '10 minutes', priority: 'LOW' },
     reviews: { task: 'Implement Review Strategy', time: '2-4 weeks', priority: 'HIGH' },
     citations: { task: 'Build Local Citations', time: '2-4 hours', priority: 'HIGH' },
@@ -1736,7 +1747,7 @@ async function generateFastBulkReport(businessName, location, industry, website)
       },
       questionsAnswers: {
         total: partialData.outscraper?.questionsAnswers || 0,
-        answered: 0 // Skip Q&A analysis for speed
+        answered: 0 // Legacy field - no longer used
       },
 
       // Citations
@@ -1910,7 +1921,7 @@ function generateCompetitiveAnalysis(auditResults, industry, location) {
 function calculateIndustryBenchmarks(auditResults) {
   const factors = [
     'claimed', 'description', 'categories', 'productTiles',
-    'photos', 'posts', 'qa', 'social',
+    'photos', 'posts', 'services', 'social',
     'reviews', 'citations', 'gbpEmbed', 'landingPage'
   ];
   
@@ -3173,7 +3184,7 @@ app.listen(PORT, () => {
   console.log('✅ Complete 12-factor scoring system (100 points)');
   console.log('✅ Outscraper integration with async polling');
   console.log('✅ ScrapingBee screenshot capture');
-  console.log('✅ OpenAI screenshot analysis (posts, tiles, Q&A, social)');
+  console.log('✅ OpenAI screenshot analysis (posts, tiles, services, social)');
   console.log('✅ Citation checking across 7 directories');
   console.log('✅ Website analysis (GBP embed + service extraction)');
   console.log('✅ SerpAPI reviews analysis');

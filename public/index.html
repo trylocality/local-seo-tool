@@ -914,11 +914,10 @@
                     'NEEDS IMPROVEMENT': 'You have some posts, but regular posting will boost your visibility',
                     'MISSING': 'Regular posts show Google your business is active - time to start posting!'
                 },
-                'qa': {
-                    'GOOD': 'Perfect! Your Q&A section helps customers get answers quickly',
-                    'NEEDS IMPROVEMENT': 'Some Q&As are there, but adding more common questions will help customers',
-                    'MISSING': 'Q&As help answer customer questions before they call - let\'s add some!',
-                    'UNCERTAIN': 'We couldn\'t clearly detect your Q&A section - it may exist but isn\'t visible'
+                'services': {
+                    'GOOD': 'Excellent! Your services are clearly listed for customers to see',
+                    'NEEDS IMPROVEMENT': 'You have some services listed, but adding more will help customers understand your offerings',
+                    'MISSING': 'Services help customers see what you offer at a glance - let\'s add them!'
                 },
                 'social': {
                     'GOOD': 'Excellent! Your social media links help customers connect with you',
@@ -963,7 +962,7 @@
                 { id: 'productTiles', name: 'Product/Service Tiles', status: 'GOOD', message: getDynamicSummary('productTiles', 'GOOD') },
                 { id: 'photos', name: 'Photos', status: 'NEEDS IMPROVEMENT', message: getDynamicSummary('photos', 'NEEDS IMPROVEMENT') },
                 { id: 'posts', name: 'Post Activity', status: 'GOOD', message: getDynamicSummary('posts', 'GOOD') },
-                { id: 'qa', name: 'Q&A Section', status: 'UNCERTAIN', message: getDynamicSummary('qa', 'UNCERTAIN') },
+                { id: 'services', name: 'Services', status: 'GOOD', message: getDynamicSummary('services', 'GOOD') },
                 { id: 'social', name: 'Social Media Links', status: 'GOOD', message: getDynamicSummary('social', 'GOOD') },
                 { id: 'reviews', name: 'Customer Reviews', status: 'GOOD', message: getDynamicSummary('reviews', 'GOOD') },
                 { id: 'citations', name: 'Local Citations', status: 'NEEDS IMPROVEMENT', message: getDynamicSummary('citations', 'NEEDS IMPROVEMENT') },
@@ -996,7 +995,7 @@
                     { id: 'citations', task: 'Build Local Citations', completed: false },
                     { id: 'photos', task: 'Upload High-Quality Photos', completed: false },
                     { id: 'gbpEmbed', task: 'Embed GBP on Website', completed: false },
-                    { id: 'qa', task: 'Populate Q&A Section', completed: false }
+                    { id: 'services', task: 'Add Services to Profile', completed: false }
                 ]
             };
             
@@ -1720,7 +1719,7 @@
                 'productTiles': 'The product/service section of your GBP where you list specific offerings with names, descriptions, and optional prices. You can include links to those offerings specific landing page.',
                 'photos': 'Images displayed on your Google Business Profile, uploaded by you or your customers.',
                 'posts': 'Updates you can publish on your GBP to share promotions, tips, or business news. Think of it like a mini social media feed but on your Google Profile.',
-                'qa': 'A space on your profile where customers can ask questions about your business, and you (or others) can answer them.',
+                'services': 'A dedicated section on your Google Business Profile where you can list and describe the services you offer, with optional pricing.',
                 'social': 'Links to your Facebook, Instagram, LinkedIn, or other social profiles listed on your GBP.',
                 'reviews': 'Ratings and feedback left by customers on your Google Business Profile.',
                 'citations': 'Mentions of your business name, address, and phone number (NAP) across online directories like Yelp, BBB, and YP.com. There are thousands of these sites, but getting listed in local directories, or industry specific ones, are most valuable.',
@@ -1738,7 +1737,7 @@
                 'productTiles': 'It\'s a chance to highlight all your key services and inject keyword-rich content into your profile. Most businesses skip this piece and miss out on those keyword opportunities.',
                 'photos': 'Photos show Google (and customers) that you\'re active and real. They improve click-through rates and build trust.',
                 'posts': 'Posts signal activity to Google and give potential customers reasons to engage. You can share discounts, new offerings or just help build your brand.',
-                'qa': 'This builds trust, answers common questions up front, and adds valuable keywords to your listing.',
+                'services': 'Services help customers quickly understand what you offer and improve your visibility for service-specific searches. They add valuable keyword-rich content to your profile.',
                 'social': 'Social profiles build trust, help customers connect, and boost your visibility beyond search.',
                 'reviews': 'Strong reviews don\'t just boost reputation—they impact how high you rank in local search results. Plus, customers are more likely to pick businesses with strong reviews.',
                 'citations': 'Google uses consistent citations to verify your business\'s credibility and location authority. While most people don\'t go to these sites to find your business, Google does. The more directories you show up in, the more likely you are to rank higher.',
@@ -1756,7 +1755,7 @@
                 'productTiles': 'Add 3-6 services you offer. Use names people might search (e.g., Drain Cleaning - Emergency Services), and include short, clear descriptions with benefits and keywords.',
                 'photos': 'Upload at least 10 quality photos. Include: logo, interior, exterior, staff/team, and your product/service in action. Add new photos monthly to stay fresh.',
                 'posts': 'Post once per week. Share a tip, a testimonial, a photo of your work, or a promo. Each post should include an image, a short caption, and a clear CTA.',
-                'qa': 'Add 3-5 common questions yourself and answer them. Think of what people typically ask: Do you offer emergency services? What areas do you serve?',
+                'services': 'Add 6-10 specific services you offer. Use clear names customers would search for (e.g., "Emergency Plumbing," "Kitchen Remodeling"). Include descriptions with benefits and pricing if applicable.',
                 'social': 'Add links to all your active profiles via your GBP dashboard. If missing, add them to your website and request a crawl or wait for them to show on Google.',
                 'reviews': 'Aim for steady, ongoing reviews (not a sudden spike). Respond to all reviews, especially new ones, and use your review link in texts, emails, and follow-ups.',
                 'citations': 'List your business on the top 8-10 directories, and ensure your NAP info is identical across all. Consider ordering citations to speed this up.',
@@ -1844,7 +1843,7 @@
                 'social': 'social',
                 'reviews': 'reviews',
                 'embed': 'gbpEmbed',
-                'qa': 'qa',
+                'services': 'services',
                 'productTiles': 'productTiles'
             };
             return keyMapping[factorId] || factorId;
